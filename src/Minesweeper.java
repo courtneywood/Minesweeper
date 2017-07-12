@@ -15,8 +15,10 @@ public class Minesweeper extends PApplet {
 	boolean gameover = false;
 	
 	PImage flag;
+	PImage bomb;
 	
 	public void draw() {
+		//will say game over until they click a starting square again
 		if (STATE == 0) {
 			homeScreen(difficultyLevel);
 			
@@ -28,7 +30,14 @@ public class Minesweeper extends PApplet {
 				board();
 			}
 			else {
-				restart();
+				board();
+				//fill(0, 102, 204);
+				//rect(200, 400, 200, 100);
+				fill(51, 204, 255);
+				textFont(f, 50);
+				text("You lost!", 110, 400);
+				textFont(f, 28);
+				text("Click Restart to Play Again!", 30, 450);
 			}
 		}
 	}
@@ -79,6 +88,7 @@ public class Minesweeper extends PApplet {
 	
 	public void setup() {
 		flag  = loadImage("flag.png");
+		bomb = loadImage("bomb.png");
 		ArrayList<Integer> mines = new ArrayList<>();
 		int count = 0;
 		int mineCount = 0;
@@ -118,6 +128,9 @@ public class Minesweeper extends PApplet {
 				}
 				else if (cells[i][j].numbered) cell(i, j, 3);
 				//else if (cells[i][j].opened) cell(i, j, 1);
+				else if (cells[i][j].bomb) {
+					cell(i, j, 4);
+				}
 				else {
 					cell(i, j, 0);
 				}
@@ -147,18 +160,25 @@ public class Minesweeper extends PApplet {
 		//1 - opened, white
 		//2 - flagged, red
 		//3, numbered, a number
+		//4 - bomb
 		int xoffset = 10;
 		int yoffset = 210;
 		if (type == 0) fill(0, 102, 204);
 		else if (type == 1 || type == 3) fill(255, 255, 255);
 		else if (type == 2) {
 			fill(0, 102, 204);
-			image(flag, row*40 + 5 + xoffset, col*40 + 5 + yoffset, 30, 30);
+			//image(flag, row*40 + 5 + xoffset, col*40 + 5 + yoffset, 30, 30);
+		}
+		else if (type == 4) {
+			fill(255, 0, 0);
 		}
 		
 		rect(row*40 + 5 + xoffset, col*40 + 5 + yoffset, 30, 30);
 		if (type == 2) {
 			image(flag, row*40 + 10 + xoffset, col*40 + 10 + yoffset, 22, 22);
+		}
+		else if (type == 4) {
+			image(bomb, row*40 + 10 + xoffset, col*40 + 10 + yoffset, 22, 22);
 		}
 		else if (type == 3) {
 			Cell c = cells[row][col];
@@ -178,12 +198,12 @@ public class Minesweeper extends PApplet {
 					clickedCell.open();
 					if (clickedCell.hasMine()) {
 						gameover = true;
+						clickedCell.showBomb();
 					}
 					else {
 						//calculate bombs around
 						int num = calculateNumber(loc[0], loc[1]);
 						clickedCell.setNum(num);
-						//placeNumber(num, loc[0], loc[1]);
 						if (num == 0) {
 							//starting explosion
 							explode(clickedCell);
@@ -382,6 +402,7 @@ public class Minesweeper extends PApplet {
 		boolean opened = false;
 		boolean flagged = false;
 		boolean numbered = false;
+		boolean bomb = false;
 		int num;
 		public Cell(int x, int y) {
 			this.x = x;
@@ -411,6 +432,12 @@ public class Minesweeper extends PApplet {
 		public void setNum(int n){
 			num = n;
 			numbered = true;
+		}
+		
+		public void showBomb() {
+			bomb = true;
+			flagged = false;
+			numbered = false;
 		}
 	}
 }
