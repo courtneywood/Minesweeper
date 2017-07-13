@@ -13,9 +13,15 @@ public class Minesweeper extends PApplet {
 	boolean update = true;
 	Random r = new Random();
 	boolean gameover = false;
+	boolean firstClick = false;
 	
 	PImage flag;
 	PImage bomb;
+	
+	int seconds = 0;
+	int minutes = 0;
+	int hours = 0;
+	double startingTime = 0;
 	
 	public void draw() {
 		//will say game over until they click a starting square again
@@ -28,6 +34,11 @@ public class Minesweeper extends PApplet {
 				background(255, 255, 255);
 				menu();
 				board();
+				if (startingTime != 0) {
+					seconds = (int) ((millis() - startingTime) / 1000) % 60;
+					minutes = (int) ((millis() - startingTime) / (1000*60)) % 60;
+					hours = (int) ((millis() - startingTime) / (1000*60*60)) % 24;
+				}
 			}
 			else {
 				board();
@@ -40,6 +51,18 @@ public class Minesweeper extends PApplet {
 				text("Click Restart to Play Again!", 30, 450);
 			}
 		}
+	}
+	
+	public void time() {
+		text("Time:", 230, 40);
+		String timetext = "";
+		if (hours < 10) timetext += "0";
+		timetext += hours + ":";
+		if (minutes < 10) timetext += "0";
+		timetext += minutes + ":";
+		if (seconds < 10) timetext += "0";
+		timetext += seconds;
+		text(timetext, 300, 40);
 	}
 	
 	public void homeScreen(int difficulty) {
@@ -87,6 +110,11 @@ public class Minesweeper extends PApplet {
 	}
 	
 	public void setup() {
+		startingTime = 0;
+		hours = 0;
+		seconds = 0;
+		minutes = 0;
+		firstClick = false;
 		flag  = loadImage("flag.png");
 		bomb = loadImage("bomb.png");
 		ArrayList<Integer> mines = new ArrayList<>();
@@ -98,7 +126,7 @@ public class Minesweeper extends PApplet {
 		for (int i = 0; i < mineCount; i++) {
 			mines.add(r.nextInt(100));
 		}
-		f = createFont("Comic Sans", 50, true);
+		f = createFont("", 50, true);
 		for (int i = 0; i < 10; i++) {
 			for (int j = 0; j < 10; j++) {
 				cells[i][j] = new Cell(i, j);
@@ -112,6 +140,7 @@ public class Minesweeper extends PApplet {
 	
 	public void settings() {
 		size(420, 620);
+		smooth();
 	}
 	
 	public static void main(String[] args) {
@@ -127,7 +156,6 @@ public class Minesweeper extends PApplet {
 					cell(i, j, 2);
 				}
 				else if (cells[i][j].numbered) cell(i, j, 3);
-				//else if (cells[i][j].opened) cell(i, j, 1);
 				else if (cells[i][j].bomb) {
 					cell(i, j, 4);
 				}
@@ -145,14 +173,17 @@ public class Minesweeper extends PApplet {
 		rect(10, 10, 100, 30);
 		fill(0, 0, 0);
 		text("Restart", 35, 32);
+		//time
+		textFont(f, 24);
+		fill(0, 0, 0);
+		time();
 		//minesweeper logo
 		textFont(f, 50);
 		fill(0, 0, 0);
 		text("Minesweeper!", 40, 100);
 		
 		//high score
-		
-		//time
+
 	}
 	
 	public void cell(int row, int col, int type) {
@@ -192,6 +223,10 @@ public class Minesweeper extends PApplet {
 		if (STATE == 1) {
 			//clicked a cell
 			if (mouseY > 220 && mouseY <= 600 && mouseX > 10 && mouseX < 410) {
+				if (firstClick == false) {
+					firstClick = true;
+					startingTime = millis();
+				}
 				int[] loc = findCellClicked(mouseX, mouseY);
 				Cell clickedCell = cells[loc[0]][loc[1]];
 				if (mouseButton == LEFT) {
