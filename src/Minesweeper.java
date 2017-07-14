@@ -23,6 +23,9 @@ public class Minesweeper extends PApplet {
 	int hours = 0;
 	double startingTime = 0;
 	
+	int mineCount;
+	int bombsRemaining;
+	
 	public void draw() {
 		//will say game over until they click a starting square again
 		if (STATE == 0) {
@@ -39,6 +42,15 @@ public class Minesweeper extends PApplet {
 					minutes = (int) ((millis() - startingTime) / (1000*60)) % 60;
 					hours = (int) ((millis() - startingTime) / (1000*60*60)) % 24;
 				}
+				if (bombsRemaining == 0 && allCellsClicked()) gameover = true;
+			}
+			else if (bombsRemaining == 0 && allCellsClicked()) {
+				board();
+				fill(51, 204, 255);
+				textFont(f, 50);
+				text("You win!", 110, 400);
+				textFont(f, 28);
+				text("Click Restart to Play Again!", 30, 450);
 			}
 			else {
 				board();
@@ -64,6 +76,7 @@ public class Minesweeper extends PApplet {
 		timetext += seconds;
 		text(timetext, 300, 40);
 	}
+	
 	
 	public void homeScreen(int difficulty) {
 		background(100, 255, 250);
@@ -119,10 +132,9 @@ public class Minesweeper extends PApplet {
 		bomb = loadImage("bomb.png");
 		ArrayList<Integer> mines = new ArrayList<>();
 		int count = 0;
-		int mineCount = 0;
-		if (difficultyLevel == 0) mineCount = 5;
-		if (difficultyLevel == 1) mineCount = 10;
-		else mineCount = 20;
+		if (difficultyLevel == 0) mineCount = 10;
+		else if (difficultyLevel == 1) mineCount = 20;
+		else mineCount = 30;
 		for (int i = 0; i < mineCount; i++) {
 			mines.add(r.nextInt(100));
 		}
@@ -136,6 +148,7 @@ public class Minesweeper extends PApplet {
 				count++;
 			}
 		}
+		bombsRemaining = mineCount;
 	}
 	
 	public void settings() {
@@ -148,12 +161,14 @@ public class Minesweeper extends PApplet {
 	}
 	
 	public void board() {
+		int flagcount = 0;
 		fill(0, 0, 0);
 		rect(10, 210, 400, 400);
 		for (int i = 0; i < 10; i++) {
 			for (int j = 0; j < 10; j++) {
 				if (cells[i][j].flagged) {
 					cell(i, j, 2);
+					flagcount++;
 				}
 				else if (cells[i][j].numbered) cell(i, j, 3);
 				else if (cells[i][j].bomb) {
@@ -164,6 +179,7 @@ public class Minesweeper extends PApplet {
 				}
 			}
 		}
+		bombsRemaining = mineCount - flagcount;
 	}
 	
 	public void menu() {
@@ -182,7 +198,9 @@ public class Minesweeper extends PApplet {
 		fill(0, 0, 0);
 		text("Minesweeper!", 40, 100);
 		
-		//high score
+		//bombs remaining
+		textFont(f, 28);
+		text("Bombs Remaining: " + bombsRemaining, 40, 160);
 
 	}
 	
@@ -216,6 +234,16 @@ public class Minesweeper extends PApplet {
 			int num = c.num;
 			placeNumber(num, row, col);
 		}
+	}
+	
+	public boolean allCellsClicked() {
+		for (int i = 0; i < 10; i++) {
+			for (int j = 0; j < 10; j++) {
+				//if its not opened, flagged, or numbered, return false
+				if (!cells[i][j].opened && !cells[i][j].flagged && !cells[i][j].numbered) return false;
+			}
+		}
+		return true;
 	}
 	
 	
@@ -281,24 +309,24 @@ public class Minesweeper extends PApplet {
 		//calculate numbers for all the ones around, if it's 0, open and call explode
 		Cell[] neighbors = getNeighbors(clickedCell);
 		for (int i = 0; i < neighbors.length; i++) {
-			int num = calculateNumber(neighbors[i].x, neighbors[i].y);
-			neighbors[i].setNum(num);
-			int x1 = neighbors[i].x;
-			int y1 = neighbors[i].y;
-			cells[x1][y1] = neighbors[i];
-			/*
-			if (num == 0) {
-				//if there are no bombs around it, explode its neighbors
-				explode(cells[neighbors[i].x][neighbors[i].y]);
-			}
-			else {
-				//if there are bombs around it, show the number
+			if (neighbors[i].numbered == false) {
+				//calculate the number for each neighbor not already numbered
+				int num = calculateNumber(neighbors[i].x, neighbors[i].y);
 				neighbors[i].setNum(num);
 				int x1 = neighbors[i].x;
 				int y1 = neighbors[i].y;
 				cells[x1][y1] = neighbors[i];
+				
+				if (num == 0) {
+					//if there are no bombs around it, explode its neighbors
+					explode(cells[x1][y1]);
+				}
+				else {
+					//if there are bombs around it, show the number
+					neighbors[i].setNum(num);
+					cells[x1][y1] = neighbors[i];
+				}
 			}
-			*/
 		}
 	}
 	
@@ -408,14 +436,16 @@ public class Minesweeper extends PApplet {
 	}
 	
 	public void placeNumber(int number, int x, int y) {
-		int roughX = x * 40;
-		int roughY = y * 40;
-		int xoffset = 25;
-		int yoffset = 235;
-		y = y + 200;
-		textFont(f, 18);
-		fill(0, 0, 0);		
-		text("" + number, roughX + 3 + xoffset, roughY + 3 + yoffset);
+		if (number != 0) {
+			int roughX = x * 40;
+			int roughY = y * 40;
+			int xoffset = 25;
+			int yoffset = 235;
+			y = y + 200;
+			textFont(f, 18);
+			fill(0, 0, 0);		
+			text("" + number, roughX + 3 + xoffset, roughY + 3 + yoffset);
+		}
 	}
 	
 	public int[] findCellClicked(int x, int y) {
